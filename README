@@ -1,0 +1,99 @@
+SIMPLE EPIDEMIC CASCADE SIMULATION
+
+(c) 2011 ComplexNetworks.fr
+
+This package contains a program to simulate a SIR cascading process and generates a spreading trace and a bash script to convert the spreading trace into the P2P network file request format.
+
+>> COMPILING:
+To compile the program, type the following command (without the '$'):
+$ make
+If you don't have the 'make' utility, type
+$ gcc -fopenmp -O3 -fopenmp -O3 -o bin/scascade source/scascade.c
+
+
+>> HELP:
+You can get some short help with the option '-?' option:
+$ bin/scascade -?
+$ bin/p2p-format.sh -?
+
+
+>> SHORT DESCRIPTION:
+The simulation has the following inputs:
+    -- An underlying graph, where the spreading takes place
+    -- A spreading probability, accounting for the likelihood of one node to infect each of its neighbors)
+    -- A bound on each file spreading simulation (on time steps or number of touched nodes)
+
+Additional parameters include number of sample epidemics, initial conditions, spreading trace output and number of threads:
+    
+ Required parameters:
+         -p SPREADING_PROBABILITY
+         -g GRAPH_PATH
+ Required parameters (one choice among the options):
+         -t GLOBAL_MAX_TIME
+         -a MAX_TIME_LIST_PATH
+         -b MAX_INFECTED_LIST_PATH
+ Optional parameters:
+         -s NUM_SAMPLE_EPIDEMICS
+         -i INITIAL_CONDITIONS_DATA_PATH 
+         -h NUM_THREADS
+         -e [STATUS_OUTPUT_PATH]
+         -o EPIDEMIC_DIR_OUTPUT
+
+The output will be a list of spreading events, each represented by the following 4-tuplet: {t P C F}, where t is a timestamp, and the other three integers are unique ids for provider, P, client, C,  and transmitted file, F.
+
+
+>> EXAMPLES:
+-- Simulate a spreading cascade with spreading probability p = 0.1 in the 10-clique graph up to time t = 3, starting with one initially actively infected node (node id='0') displaying status and saving the output to the file 'output1-maxdepth.trace': 
+
+$ bin/scascade -p 0.1 -g examples/clique10.graph -t 3 -e -o output1
+
+
+-- Simulate a spreading cascade with spreading probability p = 0.05 in a random graph up to time t = 7, with initial infected nodes given in the file 'examples/2files.initial', saving the output to the file 'output2-maxdepth.trace':
+ 
+$ bin/scascade -p 0.05 -g examples/er50-05.graph -i examples/2files.initial -t 7  -o output2
+
+
+-- Simulate a spreading cascade with spreading probability p = 1 in the 5x5 grid, with initial infected nodes given in the file 'examples/2files.initial' and simulation bounds on time specified in 'examples/2bounds', saving the output to the file 'output3-maxdepth.trace':
+
+$ bin/scascade -p 1 -g examples/grid5x5.graph -i examples/2files.initial -a examples/2bounds.list -o output3
+
+
+-- Simulate a spreading cascade with spreading probability p = 0.5 in a random graph with 50 nodes, with initial infected nodes given in the file 'examples/2files.initial' and simulation bounds on the number of infected nodes specified in 'examples/2bounds', saving the output to the file 'output3-maxsize.trace':
+
+$ bin/scascade -p 0.5 -g examples/er50-05.graph -i examples/2files.initial -b examples/2bounds.list -o output4
+
+
+-- Convert the output spreading trace to the P2P network file request format (t C F P1 ... Pn), using the current dir as tmp_dir for the program:
+
+$ bin/p2p-format.sh . < output1-maxdepth.trace > sim1.requests
+
+
+>> FORMATS:
+
+In the following examples, tags represent integer numbers:
+
+-- Graph input format: a file, in which the first line contains the number of nodes in the graph N, the nodes degree list (one per line), and a link list (also one per line):
+
+<N>
+<0> <deg_0>
+...
+<N> <deg_N>
+<i> <j>
+<k> <l>
+...
+<u> <v>
+
+
+-- Initial conditions: a file, in which the fist line holds M, the number of files (ie, of independent epidemics) and the following lines contains: the epidemic id, the number of initially infected nodes K and the corresponding node list:
+
+<M>
+<id_0> <K0> <FirstNodeListItem_0> ... <FirstNodeListItem_K0>
+...
+<id_M> <KM> <LastNodeListItem_0>  ... <LastNodeListItem_KM>
+
+
+-- Bounds on epidemics (to be used with the options "-a" or "-b"): a file, in which each line contains a bound value for each epidemic:
+
+<id_0> <bound_0>
+...
+<id_M> <bound_M>
